@@ -24,12 +24,14 @@ class ExpressiveChatHeader extends StatelessWidget {
 
   const ExpressiveChatHeader({super.key, required this.chat});
 
+  Handle get _firstHandle => HandleSvc.getOrCreateHandleState(chat.handles.first).handle;
+
   bool get _canCall =>
       !kIsWeb &&
       !kIsDesktop &&
       !chat.chatIdentifier!.startsWith("urn:biz") &&
       (chat.handles.isNotEmpty &&
-          ((chat.handles.first.contactsV2.firstOrNull?.phoneNumbers.isNotEmpty ?? false) ||
+          ((_firstHandle.contactsV2.firstOrNull?.phoneNumbers.isNotEmpty ?? false) ||
               !chat.handles.first.address.contains("@")));
 
   bool get _canAddPeople =>
@@ -134,7 +136,9 @@ class ExpressiveChatHeader extends StatelessWidget {
             const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: M3EButtonGroup(items: _buildActions(context, chatState)),
+              child: chat.handles.isEmpty
+                  ? M3EButtonGroup(items: _buildActions(context, chatState))
+                  : Obx(() => M3EButtonGroup(items: _buildActions(context, chatState))),
             ),
           ],
         ),
@@ -230,7 +234,10 @@ class ExpressiveChatHeader extends StatelessWidget {
       ];
     }
 
-    final contact = chat.handles.isNotEmpty ? chat.handles.first.contactsV2.firstOrNull : null;
+    if (chat.handles.isNotEmpty) {
+      HandleSvc.getOrCreateHandleState(chat.handles.first).contactRevision.value;
+    }
+    final contact = chat.handles.isNotEmpty ? _firstHandle.contactsV2.firstOrNull : null;
     final hasContact = contact != null && contact.isNative;
 
     return [
@@ -243,28 +250,31 @@ class ExpressiveChatHeader extends StatelessWidget {
         M3EButtonGroupItem(
           icon: Icons.call_outlined,
           label: "Call",
-          onPressed: () => showAddressPicker(contact, chat.handles.first, context),
-          onLongPress: () => showAddressPicker(contact, chat.handles.first, context, isLongPressed: true),
+          onPressed: () => showAddressPicker(_firstHandle.contactsV2.firstOrNull, _firstHandle, context),
+          onLongPress: () =>
+              showAddressPicker(_firstHandle.contactsV2.firstOrNull, _firstHandle, context, isLongPressed: true),
         ),
       if (!kIsWeb && !kIsDesktop)
         M3EButtonGroupItem(
           icon: Icons.video_call_outlined,
           label: "Video",
-          onPressed: () => showAddressPicker(contact, chat.handles.first, context, video: true),
+          onPressed: () =>
+              showAddressPicker(_firstHandle.contactsV2.firstOrNull, _firstHandle, context, video: true),
         ),
       if (chat.handles.isNotEmpty &&
           ((contact?.emailAddresses.isNotEmpty ?? false) || chat.handles.first.address.contains("@")))
         M3EButtonGroupItem(
           icon: Icons.email_outlined,
           label: "Mail",
-          onPressed: () => showAddressPicker(contact, chat.handles.first, context, isEmail: true),
+          onPressed: () =>
+              showAddressPicker(_firstHandle.contactsV2.firstOrNull, _firstHandle, context, isEmail: true),
         ),
       if (!kIsWeb && !kIsDesktop)
         M3EButtonGroupItem(
           icon: hasContact ? Icons.info_outline : Icons.person_add_outlined,
           label: hasContact ? "Info" : "Add contact",
           onPressed: () async {
-            final handle = HandleSvc.getHandleState(chat.handles.first.id!)?.handle ?? chat.handles.first;
+            final handle = _firstHandle;
             final currentContact = handle.contactsV2.firstOrNull;
             if (currentContact == null || !currentContact.isNative) {
               await MethodChannelSvc.actions.openContactForm(

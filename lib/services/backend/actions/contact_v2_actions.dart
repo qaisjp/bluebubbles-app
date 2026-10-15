@@ -127,8 +127,7 @@ class ContactV2Actions {
     int matchedContactCount = 0;
 
     try {
-      if (rebuildHandleIds != null &&
-          !await fc.FlutterContacts.permissions.has(fc.PermissionType.read)) {
+      if (rebuildHandleIds != null && !await fc.FlutterContacts.permissions.has(fc.PermissionType.read)) {
         throw StateError('Contacts permission is required. No cached contacts were cleared.');
       }
       List<fc.Contact> deviceContacts = [];
@@ -221,8 +220,7 @@ class ContactV2Actions {
         }
       }
 
-      if (rebuildHandleIds != null &&
-          !await fc.FlutterContacts.permissions.has(fc.PermissionType.read)) {
+      if (rebuildHandleIds != null && !await fc.FlutterContacts.permissions.has(fc.PermissionType.read)) {
         throw StateError('Contacts permission was revoked. No cached contacts were cleared.');
       }
 

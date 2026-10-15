@@ -63,6 +63,9 @@ class HandleState {
   /// Falls back to [handle.address] when not formatted.
   final RxnString formattedAddress;
 
+  /// Invalidates contact actions even when a replacement contact has the same name and avatar.
+  final RxInt contactRevision = 0.obs;
+
   /// Fake name generated once at construction and reused every time redacted
   /// mode is toggled, so the displayed name stays consistent.
   final String fakeName;
@@ -124,6 +127,7 @@ class HandleState {
     if (SettingsSvc.settings.redactedMode.value) {
       redactFields();
     }
+    contactRevision.value++;
   }
 
   void updateDisplayNameInternal(String? value) {

@@ -82,6 +82,7 @@ class ContactTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final handleState = HandleSvc.getOrCreateHandleState(handle);
     return Obx(() {
+      handleState.contactRevision.value;
       final String displayName = handleState.displayName.value ?? handle.address;
       final contact = handleState.handle.contactsV2.firstOrNull;
       final String address = handleState.formattedAddress.value ?? handle.address;

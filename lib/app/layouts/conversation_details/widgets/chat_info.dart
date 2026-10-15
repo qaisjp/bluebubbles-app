@@ -12,6 +12,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+Handle _currentHandle(Chat chat) => HandleSvc.getOrCreateHandleState(chat.handles.first).handle;
+
 class ChatInfo extends StatefulWidget {
   const ChatInfo({super.key, required this.chat});
 
@@ -27,13 +29,6 @@ class _ChatInfoState extends State<ChatInfo> with ThemeHelpers {
   @override
   Widget build(BuildContext context) {
     final chatState = ChatsSvc.getChatState(chat.guid);
-
-    bool canCall = !kIsWeb &&
-        !kIsDesktop &&
-        !chat.chatIdentifier!.startsWith("urn:biz") &&
-        (chat.handles.isNotEmpty &&
-            ((chat.handles.first.contactsV2.firstOrNull?.phoneNumbers.isNotEmpty ?? false) ||
-                !chat.handles.first.address.contains("@")));
 
     return DeferredPointerHandler(
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -160,21 +155,29 @@ class _ChatInfoState extends State<ChatInfo> with ThemeHelpers {
               },
             ),
           ),
-        if (!chat.isGroup && iOS)
+        if (!chat.isGroup && iOS && chat.handles.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(left: 18.0, right: 18, top: 20),
-            child: Row(
-              mainAxisAlignment: kIsWeb || kIsDesktop ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
-              children: intersperse(const SizedBox(width: 5), [
-                if (canCall) CallButton(tileColor: tileColor, chat: chat, iOS: iOS),
-                VideoCallButton(tileColor: tileColor, chat: chat, iOS: iOS),
-                if (chat.handles.isNotEmpty &&
-                    ((chat.handles.first.contactsV2.firstOrNull?.emailAddresses.isNotEmpty ?? false) ||
-                        chat.handles.first.address.contains("@")))
-                  MailButton(tileColor: tileColor, chat: chat, iOS: iOS),
-                if (!kIsWeb && !kIsDesktop) InfoButton(tileColor: tileColor, chat: chat, iOS: iOS),
-              ]).toList(),
-            ),
+            child: Obx(() {
+              HandleSvc.getOrCreateHandleState(chat.handles.first).contactRevision.value;
+              final canCall = !kIsWeb &&
+                  !kIsDesktop &&
+                  !chat.chatIdentifier!.startsWith("urn:biz") &&
+                  chat.handles.isNotEmpty &&
+                  ((_currentHandle(chat).contactsV2.firstOrNull?.phoneNumbers.isNotEmpty ?? false) ||
+                      !chat.handles.first.address.contains("@"));
+              return Row(
+                mainAxisAlignment: kIsWeb || kIsDesktop ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
+                children: intersperse(const SizedBox(width: 5), [
+                  if (canCall) CallButton(tileColor: tileColor, chat: chat, iOS: iOS),
+                  VideoCallButton(tileColor: tileColor, chat: chat, iOS: iOS),
+                  if ((_currentHandle(chat).contactsV2.firstOrNull?.emailAddresses.isNotEmpty ?? false) ||
+                      chat.handles.first.address.contains("@"))
+                    MailButton(tileColor: tileColor, chat: chat, iOS: iOS),
+                  if (!kIsWeb && !kIsDesktop) InfoButton(tileColor: tileColor, chat: chat, iOS: iOS),
+                ]).toList(),
+              );
+            }),
           ),
         if (chat.isGroup)
           Padding(
@@ -207,7 +210,7 @@ class InfoButton extends StatelessWidget {
         color: tileColor,
         child: InkWell(
           onTap: () async {
-            final handle = HandleSvc.getHandleState(chat.handles.first.id!)?.handle ?? chat.handles.first;
+            final handle = _currentHandle(chat);
             final contact = handle.contactsV2.firstOrNull;
             if (contact == null || !contact.isNative) {
               await MethodChannelSvc.actions.openContactForm(
@@ -231,8 +234,8 @@ class InfoButton extends StatelessWidget {
               children: [
                 Icon(
                   chat.handles.isNotEmpty &&
-                          chat.handles.first.contactsV2.isNotEmpty &&
-                          chat.handles.first.contactsV2.first.isNative
+                          _currentHandle(chat).contactsV2.isNotEmpty &&
+                          _currentHandle(chat).contactsV2.first.isNative
                       ? (iOS ? CupertinoIcons.info : Icons.info)
                       : (iOS ? CupertinoIcons.plus_circle : Icons.add_circle_outline),
                   color: context.theme.colorScheme.onSurface,
@@ -241,8 +244,8 @@ class InfoButton extends StatelessWidget {
                 const SizedBox(height: 7.5),
                 Text(
                     chat.handles.isNotEmpty &&
-                            chat.handles.first.contactsV2.isNotEmpty &&
-                            chat.handles.first.contactsV2.first.isNative
+                            _currentHandle(chat).contactsV2.isNotEmpty &&
+                            _currentHandle(chat).contactsV2.first.isNative
                         ? "Info"
                         : "Add Contact",
                     style: context.theme.textTheme.bodySmall!.copyWith(color: context.theme.colorScheme.onSurface)),
@@ -275,12 +278,12 @@ class MailButton extends StatelessWidget {
         color: tileColor,
         child: InkWell(
           onTap: () {
-            final contact = chat.handles.first.contactsV2.firstOrNull;
-            showAddressPicker(contact, chat.handles.first, context, isEmail: true);
+            final handle = _currentHandle(chat);
+            showAddressPicker(handle.contactsV2.firstOrNull, handle, context, isEmail: true);
           },
           onLongPress: () {
-            final contact = chat.handles.first.contactsV2.firstOrNull;
-            showAddressPicker(contact, chat.handles.first, context, isEmail: true, isLongPressed: true);
+            final handle = _currentHandle(chat);
+            showAddressPicker(handle.contactsV2.firstOrNull, handle, context, isEmail: true, isLongPressed: true);
           },
           borderRadius: BorderRadius.circular(15),
           child: SizedBox(
@@ -322,12 +325,12 @@ class VideoCallButton extends StatelessWidget {
         color: tileColor,
         child: InkWell(
           onTap: () {
-            final contact = chat.handles.first.contactsV2.firstOrNull;
-            showAddressPicker(contact, chat.handles.first, context, video: true);
+            final handle = _currentHandle(chat);
+            showAddressPicker(handle.contactsV2.firstOrNull, handle, context, video: true);
           },
           onLongPress: () {
-            final contact = chat.handles.first.contactsV2.firstOrNull;
-            showAddressPicker(contact, chat.handles.first, context, isLongPressed: true, video: true);
+            final handle = _currentHandle(chat);
+            showAddressPicker(handle.contactsV2.firstOrNull, handle, context, isLongPressed: true, video: true);
           },
           borderRadius: BorderRadius.circular(15),
           child: SizedBox(
@@ -370,12 +373,12 @@ class CallButton extends StatelessWidget {
         color: tileColor,
         child: InkWell(
           onTap: () {
-            final contact = chat.handles.first.contactsV2.firstOrNull;
-            showAddressPicker(contact, chat.handles.first, context);
+            final handle = _currentHandle(chat);
+            showAddressPicker(handle.contactsV2.firstOrNull, handle, context);
           },
           onLongPress: () {
-            final contact = chat.handles.first.contactsV2.firstOrNull;
-            showAddressPicker(contact, chat.handles.first, context, isLongPressed: true);
+            final handle = _currentHandle(chat);
+            showAddressPicker(handle.contactsV2.firstOrNull, handle, context, isLongPressed: true);
           },
           borderRadius: BorderRadius.circular(15),
           child: SizedBox(
