@@ -89,11 +89,26 @@ class ContactV2Actions {
     return stats.toMap();
   }
 
-  static Future<_ContactSyncStats> _syncContactsToHandlesInternal(dynamic data) async {
+  static Future<List<int>> clearContactCache(Map<String, dynamic> data) async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      throw UnsupportedError('Contact cache recovery is only available on Android.');
+    }
+    final handleIds = (data['handleIds'] as List).cast<int>().toSet();
+    if (handleIds.isEmpty) return [];
+    final stats = await _syncContactsToHandlesInternal(data, rebuildHandleIds: handleIds);
+    return stats.affectedHandleIds;
+  }
+
+  static Future<_ContactSyncStats> _syncContactsToHandlesInternal(
+    dynamic data, {
+    Set<int>? rebuildHandleIds,
+  }) async {
     // If already processing, wait for the existing operation to complete
-    if (_syncCompleter != null && !_syncCompleter!.isCompleted) {
+    while (_syncCompleter != null && !_syncCompleter!.isCompleted) {
       Logger.info('[ContactV2] Sync already in progress, waiting for completion...');
-      return await _syncCompleter!.future;
+      final stats = await _syncCompleter!.future;
+      // Recovery must run its own reconciliation, not just join an ordinary sync.
+      if (rebuildHandleIds == null) return stats;
     }
 
     // Create a new completer for this sync operation
@@ -112,6 +127,10 @@ class ContactV2Actions {
     int matchedContactCount = 0;
 
     try {
+      if (rebuildHandleIds != null &&
+          !await fc.FlutterContacts.permissions.has(fc.PermissionType.read)) {
+        throw StateError('Contacts permission is required. No cached contacts were cleared.');
+      }
       List<fc.Contact> deviceContacts = [];
       List<ContactV2> networkContacts = [];
       final avatarPaths = <String, String?>{};
@@ -202,10 +221,29 @@ class ContactV2Actions {
         }
       }
 
+      if (rebuildHandleIds != null &&
+          !await fc.FlutterContacts.permissions.has(fc.PermissionType.read)) {
+        throw StateError('Contacts permission was revoked. No cached contacts were cleared.');
+      }
+
       // Step 2: Process and normalize contacts within a transaction (synchronous only!)
       Database.runInTransaction(TxMode.write, () {
         final contactsBox = Database.contactsV2;
         final handlesBox = Database.handles;
+        if (rebuildHandleIds != null) {
+          final contactsToRemove = <int, ContactV2>{};
+          for (final handle in handlesBox.getMany(rebuildHandleIds.toList()).whereType<Handle>()) {
+            for (final contact in handle.contactsV2.where((c) => c.isNative)) {
+              contactsToRemove[contact.id] = contact;
+            }
+          }
+          affectedHandleIds.addAll(rebuildHandleIds);
+          for (final contact in contactsToRemove.values) {
+            // A contact can link multiple addresses across several conversations.
+            affectedHandleIds.addAll(contact.handles.map((h) => h.id).whereType<int>());
+          }
+          contactsBox.removeMany(contactsToRemove.keys.toList());
+        }
         final allHandles = handlesBox.getAll();
 
         final emailHandleMap = <String, List<Handle>>{};
@@ -435,6 +473,7 @@ class ContactV2Actions {
           try {
             contactsBox.put(contact);
           } on UniqueViolationException catch (e) {
+            if (rebuildHandleIds != null) rethrow;
             Logger.warn('[ContactV2] Unique violation for contact ${contact.nativeContactId}: $e');
           }
 
@@ -493,6 +532,7 @@ class ContactV2Actions {
       // Complete the completer with an empty result on error
       const stats = _ContactSyncStats(affectedHandleIds: [], deviceContactCount: 0, matchedContactCount: 0);
       _syncCompleter?.complete(stats);
+      if (rebuildHandleIds != null) rethrow;
       return stats;
     }
   }

@@ -228,6 +228,18 @@ class ContactServiceV2 {
     await syncContactsToHandles(wait: false);
   }
 
+  Future<void> clearContactCache(Chat chat) async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      throw UnsupportedError('Contact cache recovery is only available on Android.');
+    }
+    if (!await checkPermissionStatus()) {
+      throw StateError('Allow contacts access in Android settings and try again. No cached contacts were cleared.');
+    }
+    final handleIds = chat.handles.map((h) => h.id).whereType<int>().toList();
+    final affectedHandleIds = await ContactV2Interface.clearContactCache(handleIds: handleIds);
+    notifyHandlesUpdated(affectedHandleIds);
+  }
+
   Future<List<int>> syncContactsToHandles({bool wait = true}) async {
     final access = await hasContactAccess;
     if (!access) {

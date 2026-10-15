@@ -90,6 +90,7 @@ class IsolateActons {
     // ContactV2 (new contact service)
     IsolateRequestType.syncContactsToHandles: ContactV2Actions.syncContactsToHandles,
     IsolateRequestType.syncContactsToHandlesWithStats: ContactV2Actions.syncContactsToHandlesWithStats,
+    IsolateRequestType.clearContactCache: ContactV2Actions.clearContactCache,
     IsolateRequestType.getStoredContactIds: ContactV2Actions.getStoredContactIds,
     IsolateRequestType.findOneContact: ContactV2Actions.findOneContact,
     IsolateRequestType.getContactsForHandles: ContactV2Actions.getContactsForHandles,

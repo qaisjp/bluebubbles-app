@@ -264,14 +264,16 @@ class ExpressiveChatHeader extends StatelessWidget {
           icon: hasContact ? Icons.info_outline : Icons.person_add_outlined,
           label: hasContact ? "Info" : "Add contact",
           onPressed: () async {
-            if (!hasContact) {
+            final handle = HandleSvc.getHandleState(chat.handles.first.id!)?.handle ?? chat.handles.first;
+            final currentContact = handle.contactsV2.firstOrNull;
+            if (currentContact == null || !currentContact.isNative) {
               await MethodChannelSvc.actions.openContactForm(
                 address: chat.handles.first.address,
                 isEmail: chat.handles.first.address.isEmail,
               );
             } else {
               try {
-                await MethodChannelSvc.actions.viewContactForm(nativeContactId: contact.nativeContactId);
+                await MethodChannelSvc.actions.viewContactForm(nativeContactId: currentContact.nativeContactId);
               } catch (_) {
                 showSnackbar("Error", "Failed to find contact on device!", type: SnackbarType.error);
               }

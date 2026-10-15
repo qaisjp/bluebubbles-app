@@ -1,5 +1,6 @@
 import 'package:bluebubbles/app/components/m3e/m3e.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/chat_sync_dialog.dart';
+import 'package:bluebubbles/app/layouts/conversation_details/dialogs/clear_contact_cache_dialog.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/pages/chat_stats/chat_stats_page.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/sync_time_range_dialog.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
@@ -392,6 +393,15 @@ class ExpressiveChatOptions extends StatelessWidget {
           title: "Storage",
           supportingText: "Attachment storage usage for this chat",
           onTap: () => NavigationSvc.push(context, StorageAnalyzerPanel(initialChat: chat)),
+        ),
+      ),
+      _OptionRow(
+        enabled: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
+        build: (context) => M3EListTile(
+          icon: Icons.person_outline,
+          title: "Clear contact cache",
+          supportingText: "Rebuild cached contacts for this chat. Messages and phone contacts are not deleted.",
+          onTap: () => showClearContactCacheDialog(context, chat),
         ),
       ),
       // Parity fix — "View bookmarks" was gated behind `if (iOS)` even though the flow

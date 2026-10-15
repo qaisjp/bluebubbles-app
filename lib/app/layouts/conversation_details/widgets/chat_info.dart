@@ -207,8 +207,8 @@ class InfoButton extends StatelessWidget {
         color: tileColor,
         child: InkWell(
           onTap: () async {
-            final contact = chat.handles.first.contactsV2.firstOrNull;
-            final handle = chat.handles.first;
+            final handle = HandleSvc.getHandleState(chat.handles.first.id!)?.handle ?? chat.handles.first;
+            final contact = handle.contactsV2.firstOrNull;
             if (contact == null || !contact.isNative) {
               await MethodChannelSvc.actions.openContactForm(
                 address: handle.address,
