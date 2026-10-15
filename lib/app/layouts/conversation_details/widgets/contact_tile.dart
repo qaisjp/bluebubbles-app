@@ -81,9 +81,10 @@ class ContactTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final handleState = HandleSvc.getOrCreateHandleState(handle);
-    final contact = handle.contactsV2.firstOrNull;
     return Obx(() {
+      handleState.contactRevision.value;
       final String displayName = handleState.displayName.value ?? handle.address;
+      final contact = handleState.handle.contactsV2.firstOrNull;
       final String address = handleState.formattedAddress.value ?? handle.address;
       final bool isEmail = handle.address.isEmail;
       final child = InkWell(
@@ -95,7 +96,7 @@ class ContactTile extends StatelessWidget {
         onTap: kIsDesktop
             ? null
             : () async {
-                final contactV2 = handle.contactsV2.firstOrNull;
+                final contactV2 = handleState.handle.contactsV2.firstOrNull;
                 if (contactV2 == null || !contactV2.isNative) {
                   await MethodChannelSvc.actions.openContactForm(
                     address: handle.address,

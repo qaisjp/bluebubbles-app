@@ -22,6 +22,15 @@ class ContactV2Interface {
     return {'accountName': accountName, 'accountType': accountType};
   }
 
+  static Future<List<int>> clearContactCache({required List<int> handleIds}) async {
+    final data = {..._accountFilterData(), 'handleIds': handleIds};
+    if (isIsolate) {
+      return await ContactV2Actions.clearContactCache(data);
+    } else {
+      return await GetIt.I<GlobalIsolate>().send<List<int>>(IsolateRequestType.clearContactCache, input: data);
+    }
+  }
+
   /// Fetch all contacts from the device and match them to existing handles
   /// This operation is executed in the GlobalIsolate to prevent UI jank
   ///

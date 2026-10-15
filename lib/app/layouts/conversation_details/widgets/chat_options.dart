@@ -1,4 +1,5 @@
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/chat_sync_dialog.dart';
+import 'package:bluebubbles/app/layouts/conversation_details/dialogs/clear_contact_cache_dialog.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/pages/chat_stats/chat_stats_page.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/sync_time_range_dialog.dart';
 import 'package:bluebubbles/app/layouts/conversation_details/dialogs/timeframe_picker.dart';
@@ -441,6 +442,21 @@ class _ChatOptionsState extends State<ChatOptions> with ThemeHelpers {
           trailing: const NextButton(),
           isThreeLine: true,
           onTap: () => NavigationSvc.push(context, StorageAnalyzerPanel(initialChat: chat)),
+        ),
+      ),
+      _OptionRow(
+        enabled: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
+        build: (context) => SettingsTile(
+          title: "Clear contact cache",
+          subtitle: "Rebuild cached contacts for this chat. Messages and phone contacts are not deleted.",
+          backgroundColor: tileColor,
+          leading: const SettingsLeadingIcon(
+            iosIcon: CupertinoIcons.person_crop_circle,
+            materialIcon: Icons.person_outline,
+            containerColor: Colors.orange,
+          ),
+          isThreeLine: true,
+          onTap: () => showClearContactCacheDialog(context, chat),
         ),
       ),
       _OptionRow(

@@ -12,6 +12,7 @@ Displayed as a right-side panel on tablet or pushed screen on mobile.
 - `timeframe_picker.dart` — date range selector (for media/docs filtering)
 - `add_participant.dart` — add a member to a group chat
 - `chat_sync_dialog.dart` — progress dialog for re-syncing chat history
+- `clear_contact_cache_dialog.dart` — shared Android contact cache recovery confirmation and progress
 
 ## Material 3 Expressive (`material/`)
 The Material/Samsung-only expressive tree — `conversation_details.dart` routes to these instead

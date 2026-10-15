@@ -10,6 +10,7 @@ Dialogs shown from within the conversation details / info panel.
 | `address_picker.dart` | Picker for choosing which address/handle to use when sending to a contact with multiple numbers |
 | `change_name.dart` | Dialog for renaming a group conversation |
 | `chat_sync_dialog.dart` | Progress dialog shown during a manual chat-level resync |
+| `clear_contact_cache_dialog.dart` | Android contact cache recovery confirmation and progress, shared by both layouts |
 | `sync_time_range_dialog.dart` | Picker for choosing the date range to resync when starting a manual chat sync |
 | `timeframe_picker.dart` | Date/time range picker used when exporting or reviewing chat history |
 

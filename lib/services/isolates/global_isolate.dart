@@ -751,6 +751,7 @@ enum IsolateRequestType {
   // ContactV2 actions (new contact service)
   syncContactsToHandles,
   syncContactsToHandlesWithStats,
+  clearContactCache,
   getStoredContactIds,
   findOneContact,
   getContactsForHandles,
